@@ -73,6 +73,8 @@
           <option value="sport">⚽ ספורט / חוג</option>
           <option value="medical">🏥 רפואי</option>
           <option value="birthday">🎂 יום הולדת</option>
+          <option value="bar_mitzva">🎩 בר מצווה</option>
+          <option value="bat_mitzva">👑 בת מצווה</option>
           <option value="school">🎒 בית ספר</option>
           <option value="other">📌 אחר</option>
         </select>
@@ -113,7 +115,7 @@
 </div>
 
 <script>
-const TYPE_LABELS = { sport:'ספורט / חוג', medical:'רפואי', birthday:'יום הולדת', school:'בית ספר', other:'אחר' };
+const TYPE_LABELS = { sport:'ספורט / חוג', medical:'רפואי', birthday:'יום הולדת', bar_mitzva:'בר מצווה', bat_mitzva:'בת מצווה', school:'בית ספר', other:'אחר' };
 let events = JSON.parse(localStorage.getItem('kids-bot-events') || '[]');
 
 function save() { localStorage.setItem('kids-bot-events', JSON.stringify(events)); }

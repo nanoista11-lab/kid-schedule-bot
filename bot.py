@@ -16,6 +16,8 @@ TYPE_LABELS = {
     "sport": "ספורט / חוג",
     "medical": "רפואי",
     "birthday": "יום הולדת",
+    "bar_mitzva": "בר מצווה",
+    "bat_mitzva": "בת מצווה",
     "school": "בית ספר",
     "other": "אחר",
 }
@@ -24,6 +26,8 @@ TYPE_EMOJI = {
     "sport": "⚽",
     "medical": "🏥",
     "birthday": "🎂",
+    "bar_mitzva": "🎩",
+    "bat_mitzva": "👑",
     "school": "🎒",
     "other": "📌",
 }
