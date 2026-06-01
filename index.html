@@ -23,6 +23,7 @@
   textarea { resize: vertical; min-height: 60px; }
   .add-btn { width: 100%; padding: 12px; background: #25D366; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 14px; }
   .add-btn:active { background: #1DAA55; transform: scale(0.98); }
+  .add-btn:disabled { background: #aaa; }
   .event-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
   .event-item:last-child { border-bottom: none; padding-bottom: 0; }
   .event-item:first-child { padding-top: 0; }
@@ -33,6 +34,8 @@
   .sport { background: #e8f5e9; color: #2e7d32; }
   .medical { background: #fce4ec; color: #c62828; }
   .birthday { background: #fce4ec; color: #880e4f; }
+  .bar_mitzva { background: #ede7f6; color: #4527a0; }
+  .bat_mitzva { background: #fce4ec; color: #880e4f; }
   .school { background: #e3f2fd; color: #1565c0; }
   .other { background: #f5f5f5; color: #555; }
   .del-btn { background: none; border: none; color: #bbb; font-size: 20px; cursor: pointer; line-height: 1; padding: 0 4px; }
@@ -40,6 +43,8 @@
   .empty { text-align: center; padding: 2rem; color: #999; font-size: 14px; }
   .tg-tip { background: #e8f4fd; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #1565c0; line-height: 1.6; margin-bottom: 1rem; }
   .tg-tip b { font-weight: 600; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -57,7 +62,7 @@
 
   <div class="tg-tip">
     <b>🤖 הבוט בטלגרם שלך פעיל!</b><br>
-    אירועים שתוסיף כאן יישלחו אוטומטית כתזכורת בטלגרם — יום לפני ב-20:00 ובבוקר האירוע ב-07:30.
+    אירועים שתוסיף כאן יישלחו אוטומטית כתזכורת בטלגרם — יום לפני ב-20:00 ובבוקר האירוע ב-07:00.
   </div>
 
   <div class="card">
@@ -104,27 +109,47 @@
         <textarea id="notes" placeholder="ציוד, בגדים, תשלום..."></textarea>
       </div>
     </div>
-    <button class="add-btn" onclick="addEvent()">✅ הוסף אירוע</button>
+    <button class="add-btn" id="add-btn" onclick="addEvent()">✅ הוסף אירוע</button>
   </div>
 
   <div class="card">
     <h2>📅 אירועים קרובים</h2>
-    <div id="events-list"><div class="empty">אין אירועים עדיין</div></div>
+    <div id="events-list"><div class="empty">טוען...</div></div>
   </div>
 
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
 const TYPE_LABELS = { sport:'ספורט / חוג', medical:'רפואי', birthday:'יום הולדת', bar_mitzva:'בר מצווה', bat_mitzva:'בת מצווה', school:'בית ספר', other:'אחר' };
-let events = JSON.parse(localStorage.getItem('kids-bot-events') || '[]');
 
-function save() { localStorage.setItem('kids-bot-events', JSON.stringify(events)); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
 
-function addEvent() {
+async function loadEvents() {
+  try {
+    const res = await fetch('/api/events');
+    return await res.json();
+  } catch(e) {
+    return [];
+  }
+}
+
+async function addEvent() {
   const child = document.getElementById('child').value.trim();
   const date = document.getElementById('date').value;
   if (!child || !date) { alert('נא למלא שם ותאריך'); return; }
-  events.push({
+
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true;
+  btn.textContent = 'שומר...';
+
+  const event = {
     id: Date.now(),
     child,
     date,
@@ -134,28 +159,38 @@ function addEvent() {
     dropoff_by: document.getElementById('dropoff').value.trim(),
     notes: document.getElementById('notes').value.trim(),
     type: document.getElementById('type').value
-  });
-  events.sort((a,b) => a.date.localeCompare(b.date));
-  save();
-  ['child','date','time','location','pickup','dropoff','notes'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('type').value = 'sport';
-  renderEvents();
+  };
 
-  const json = JSON.stringify(events, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'events.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  alert('✅ האירוע נוסף!\n\nקובץ events.json הורד — העתק/י אותו לתיקיית data/ בשרת.');
+  try {
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    });
+    if (res.ok) {
+      ['child','date','time','location','pickup','dropoff','notes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('type').value = 'sport';
+      showToast('✅ האירוע נוסף!');
+      renderEvents();
+    } else {
+      alert('שגיאה בשמירה');
+    }
+  } catch(e) {
+    alert('שגיאת תקשורת עם השרת');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✅ הוסף אירוע';
 }
 
-function deleteEvent(id) {
-  events = events.filter(e => e.id !== id);
-  save();
-  renderEvents();
+async function deleteEvent(id) {
+  try {
+    await fetch('/api/events/' + id, { method: 'DELETE' });
+    showToast('🗑 האירוע נמחק');
+    renderEvents();
+  } catch(e) {
+    alert('שגיאה במחיקה');
+  }
 }
 
 function formatDate(d) {
@@ -163,16 +198,17 @@ function formatDate(d) {
   return `${day}/${m}/${y}`;
 }
 
-function renderEvents() {
+async function renderEvents() {
   const el = document.getElementById('events-list');
+  const events = await loadEvents();
   const today = new Date().toISOString().split('T')[0];
-  const upcoming = events.filter(e => e.date >= today);
+  const upcoming = events.filter(e => e.date >= today).sort((a,b) => a.date.localeCompare(b.date));
   if (!upcoming.length) { el.innerHTML = '<div class="empty">אין אירועים קרובים</div>'; return; }
   el.innerHTML = upcoming.map(e => `
     <div class="event-item">
       <div class="event-top">
         <div>
-          <span class="badge ${e.type}">${TYPE_LABELS[e.type]}</span>
+          <span class="badge ${e.type}">${TYPE_LABELS[e.type] || e.type}</span>
           <div class="event-name">${e.child}</div>
         </div>
         <button class="del-btn" onclick="deleteEvent(${e.id})">×</button>
