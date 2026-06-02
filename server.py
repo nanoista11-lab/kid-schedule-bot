@@ -1,5 +1,7 @@
+import subprocess
+import sys
+subprocess.Popen([sys.executable, "bot.py"])
 import os
-import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
