@@ -1,6 +1,3 @@
-import subprocess
-import sys
-subprocess.Popen([sys.executable, "bot.py"])
 import os
 import json
 import asyncio
