@@ -1,6 +1,8 @@
+import os
+import json
 import subprocess
 import sys
-import os
+import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -8,6 +10,8 @@ from urllib.parse import urlparse
 DATA_FILE = Path("data/events.json")
 DATA_FILE.parent.mkdir(exist_ok=True)
 PORT = int(os.environ.get("PORT", 8080))
+
+bot_process = subprocess.Popen([sys.executable, "bot.py"])
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -61,5 +65,3 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 HTTPServer(("", PORT), Handler).serve_forever()
-
-
