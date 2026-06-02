@@ -1,6 +1,5 @@
 import subprocess
 import sys
-subprocess.Popen([sys.executable, "bot.py"])
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
